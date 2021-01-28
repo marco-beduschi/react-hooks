@@ -13,10 +13,17 @@ import {
   PokemonDataView,
 } from '../pokemon'
 
+const StatusEnum = {
+  IDLE: 'idle',
+  PENDING: 'pending',
+  RESOLVED: 'resolved',
+  REJECTED: 'rejected',
+}
 function PokemonInfo({pokemonName}) {
   // 🐨 Have state for the pokemon (null)
   const [pokemon, setPokemon] = React.useState(null)
   const [error, setError] = React.useState(null)
+  const [status, setStatus] = React.useState(StatusEnum.IDLE)
   // 🐨 use React.useEffect where the callback should be called whenever the
   // pokemon name changes.
   // 💰 DON'T FORGET THE DEPENDENCIES ARRAY!
@@ -31,14 +38,15 @@ function PokemonInfo({pokemonName}) {
       return
     }
 
-    setPokemon(null)
-    setError(null)
+    setStatus(StatusEnum.PENDING)
     fetchPokemon(pokemonName)
       .then(pokemonData => {
         setPokemon(pokemonData)
+        setStatus(StatusEnum.RESOLVED)
       })
       .catch(error => {
         setError(error)
+        setStatus(StatusEnum.REJECTED)
       })
   }, [pokemonName])
 
@@ -46,22 +54,23 @@ function PokemonInfo({pokemonName}) {
   //   1. no pokemonName: 'Submit a pokemon'
   //   2. pokemonName but no pokemon: <PokemonInfoFallback name={pokemonName} />
   //   3. pokemon: <PokemonDataView pokemon={pokemon} />
-  // 💣 remove this
-  if (error) {
-    return (
-      <div role="alert">
-        There was an error:{' '}
-        <pre style={{whiteSpace: 'normal'}}>{error.message}</pre>
-      </div>
-    )
-  }
 
-  if (!pokemonName) {
-    return 'Submit a pokemon'
-  } else if (!pokemon) {
-    return <PokemonInfoFallback name={pokemonName} />
-  } else {
-    return <PokemonDataView pokemon={pokemon} />
+  switch (status) {
+    case StatusEnum.IDLE:
+      return 'Submit a pokemon'
+    case StatusEnum.PENDING:
+      return <PokemonInfoFallback name={pokemonName} />
+    case StatusEnum.REJECTED:
+      return (
+        <div role="alert">
+          There was an error:{' '}
+          <pre style={{whiteSpace: 'normal'}}>{error.message}</pre>
+        </div>
+      )
+    case StatusEnum.RESOLVED:
+      return <PokemonDataView pokemon={pokemon} />
+    default:
+      throw new Error('this should be impossible')
   }
 }
 
