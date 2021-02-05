@@ -21,9 +21,11 @@ const StatusEnum = {
 }
 function PokemonInfo({pokemonName}) {
   // 🐨 Have state for the pokemon (null)
-  const [pokemon, setPokemon] = React.useState(null)
-  const [error, setError] = React.useState(null)
-  const [status, setStatus] = React.useState(StatusEnum.IDLE)
+  const [state, setState] = React.useState({
+    pokemon: null,
+    status: StatusEnum.IDLE,
+    error: null,
+  })
   // 🐨 use React.useEffect where the callback should be called whenever the
   // pokemon name changes.
   // 💰 DON'T FORGET THE DEPENDENCIES ARRAY!
@@ -33,29 +35,27 @@ function PokemonInfo({pokemonName}) {
   //   fetchPokemon('Pikachu').then(
   //     pokemonData => { /* update all the state here */},
   //   )
+
   React.useEffect(() => {
     if (pokemonName === '') {
       return
     }
 
-    setStatus(StatusEnum.PENDING)
+    setState({status: StatusEnum.PENDING})
     fetchPokemon(pokemonName)
-      .then(pokemonData => {
-        setPokemon(pokemonData)
-        setStatus(StatusEnum.RESOLVED)
+      .then(pokemon => {
+        setState({
+          pokemon,
+          status: StatusEnum.RESOLVED,
+          error: null,
+        })
       })
       .catch(error => {
-        setError(error)
-        setStatus(StatusEnum.REJECTED)
+        setState({status: StatusEnum.REJECTED, error})
       })
   }, [pokemonName])
 
-  // 🐨 return the following things based on the `pokemon` state and `pokemonName` prop:
-  //   1. no pokemonName: 'Submit a pokemon'
-  //   2. pokemonName but no pokemon: <PokemonInfoFallback name={pokemonName} />
-  //   3. pokemon: <PokemonDataView pokemon={pokemon} />
-
-  switch (status) {
+  switch (state.status) {
     case StatusEnum.IDLE:
       return 'Submit a pokemon'
     case StatusEnum.PENDING:
@@ -64,11 +64,11 @@ function PokemonInfo({pokemonName}) {
       return (
         <div role="alert">
           There was an error:{' '}
-          <pre style={{whiteSpace: 'normal'}}>{error.message}</pre>
+          <pre style={{whiteSpace: 'normal'}}>{state.error.message}</pre>
         </div>
       )
     case StatusEnum.RESOLVED:
-      return <PokemonDataView pokemon={pokemon} />
+      return <PokemonDataView pokemon={state.pokemon} />
     default:
       throw new Error('this should be impossible')
   }
