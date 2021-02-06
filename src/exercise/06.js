@@ -13,12 +13,36 @@ import {
   PokemonDataView,
 } from '../pokemon'
 
+class PokemonInfoErrorBoundary extends React.Component {
+  state = {error: false}
+
+  static getDerivedStateFromError(error) {
+    return {error}
+  }
+
+  render() {
+    const {error} = this.state
+
+    if (error) {
+      return (
+        <div role="alert">
+          There was an error:{' '}
+          <pre style={{whiteSpace: 'normal'}}>{error.message}</pre>
+        </div>
+      )
+    }
+
+    return this.props.children
+  }
+}
+
 const StatusEnum = {
   IDLE: 'idle',
   PENDING: 'pending',
   RESOLVED: 'resolved',
   REJECTED: 'rejected',
 }
+
 function PokemonInfo({pokemonName}) {
   // 🐨 Have state for the pokemon (null)
   const [state, setState] = React.useState({
@@ -26,15 +50,6 @@ function PokemonInfo({pokemonName}) {
     status: StatusEnum.IDLE,
     error: null,
   })
-  // 🐨 use React.useEffect where the callback should be called whenever the
-  // pokemon name changes.
-  // 💰 DON'T FORGET THE DEPENDENCIES ARRAY!
-  // 💰 if the pokemonName is falsy (an empty string) then don't bother making the request (exit early).
-  // 🐨 before calling `fetchPokemon`, make sure to update the loading state
-  // 💰 Use the `fetchPokemon` function to fetch a pokemon by its name:
-  //   fetchPokemon('Pikachu').then(
-  //     pokemonData => { /* update all the state here */},
-  //   )
 
   React.useEffect(() => {
     if (pokemonName === '') {
@@ -61,12 +76,7 @@ function PokemonInfo({pokemonName}) {
     case StatusEnum.PENDING:
       return <PokemonInfoFallback name={pokemonName} />
     case StatusEnum.REJECTED:
-      return (
-        <div role="alert">
-          There was an error:{' '}
-          <pre style={{whiteSpace: 'normal'}}>{state.error.message}</pre>
-        </div>
-      )
+      throw state.error
     case StatusEnum.RESOLVED:
       return <PokemonDataView pokemon={state.pokemon} />
     default:
@@ -86,7 +96,9 @@ function App() {
       <PokemonForm pokemonName={pokemonName} onSubmit={handleSubmit} />
       <hr />
       <div className="pokemon-info">
-        <PokemonInfo pokemonName={pokemonName} />
+        <PokemonInfoErrorBoundary>
+          <PokemonInfo pokemonName={pokemonName} />
+        </PokemonInfoErrorBoundary>
       </div>
     </div>
   )
